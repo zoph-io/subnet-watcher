@@ -28,6 +28,8 @@ Change it in the `Makefile`
 |      AlertsRecipient       |   Recipient of SNS Message (Alerts)    |  `yes`   |                |
 | PercentageRemainingWarning |  Percentage Remaining IP for alerting  |  `yes`   |      `20`      |
 
+_Optional:_ You can modify the CloudFormation template to specify the `VPC_ID` (empty by default) as an environment variable, which will cause the check to be performed on the specified VPC.
+
 ## 🚀 Deployment
 
     $ make deploy
