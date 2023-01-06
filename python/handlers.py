@@ -175,12 +175,8 @@ def put_cw_metrics(
     # AvailableNetworkInterface
     try:
         # count_enis is a list of dict if multiple regions, otherise its a simple int.
-        if type(count_enis) == list:
-            for i in count_enis:
-                if "region" in i:
-                    enis = i["count"]
-        else:
-            enis = count_enis
+        for count_eni in count_enis:
+            enis = count_eni["count"]
         cloudwatch.put_metric_data(
             Namespace="VPCSubnetMetrics",
             MetricData=[
@@ -204,32 +200,32 @@ def put_cw_metrics(
 
 def main(event, context):
     subnets_flagged = []
-    # If VPC_ID is not set, iterate all AWS regions
-    if "VPC_ID" not in os.environ or os.environ["VPC_ID"] == "":
+    count_enis = []
 
+    # If VPC_ID AND REGION_ID are NOT set, iterate all AWS regions
+    if ("REGION_ID" not in os.environ or os.environ["REGION_ID"] == "") and (
+        "VPC_ID" not in os.environ or os.environ["VPC_ID"] == ""
+    ):
         region_client = boto3.client("ec2")
 
         # Getting list of all AWS Regions
         regions = region_client.describe_regions()
-        
-        count_enis = []
-        
+
         for region in regions["Regions"]:
             logging.info("Checking: %s", region["RegionName"])
-            
+
             vpc_client = boto3.client("ec2", region_name=region["RegionName"])
 
             # Get ENI count per region
             enis_count = count_available_enis(region["RegionName"])
-            if enis_count > 0:
-                count_enis.append(
-                    {
-                        "region": region["RegionName"],
-                        "count": enis_count,
-                    }
-                )
+            count_enis.append(
+                {
+                    "region": region["RegionName"],
+                    "count": enis_count,
+                }
+            )
 
-            # Getting list of all VPCs in a single AWS Region
+            # Get list of all VPCs in a single AWS Region
             vpcs = vpc_client.describe_vpcs()
 
             for vpc in vpcs["Vpcs"]:
@@ -247,23 +243,62 @@ def main(event, context):
 
                 if low_ips:
                     subnets_flagged.extend(low_ips)
+                else:
+                    logging.info(
+                        "No low ip detected in %s for %s",
+                        vpc_object.vpc_id,
+                        region["RegionName"],
+                    )
     else:
-        # Checking AWS Region
-        if "REGION_ID" not in os.environ or os.environ["REGION_ID"] == "":
-            region_id = os.environ["AWS_REGION"]
-        else:
-            region_id = os.environ["REGION_ID"]
+        # Checking single AWS Region as VPC_ID and REGION_ID are NOT set
+        region_id = os.environ["REGION_ID"]
 
-        count_enis = count_available_enis(region_id)
-        vpc_client = boto3.resource("ec2", region_name=region_id)
-        vpc = vpc_client.Vpc(os.environ["VPC_ID"])
-
-        subnets_flagged = check_for_low_ips(
-            list(vpc.subnets.all()), vpc.vpc_id, region_id, count_enis
+        # Get ENI count on this specific region
+        enis_count = count_available_enis(region_id)
+        count_enis.append(
+            {
+                "region": region_id,
+                "count": enis_count,
+            }
         )
 
+        vpc_client = boto3.client("ec2", region_name=region_id)
+
+        if "VPC_ID" not in os.environ or os.environ["VPC_ID"] == "":
+            # Get list of all VPCs in a single AWS Region
+            vpcs = vpc_client.describe_vpcs()
+
+            for vpc in vpcs["Vpcs"]:
+                vpc_resource = boto3.resource("ec2", region_name=region_id)
+
+                vpc_object = vpc_resource.Vpc(vpc["VpcId"])
+
+                # For each VPC in a single AWS Region, check for low ips
+                low_ips = check_for_low_ips(
+                    list(vpc_object.subnets.all()),
+                    vpc_object.vpc_id,
+                    region_id,
+                    count_enis,
+                )
+
+                if low_ips:
+                    subnets_flagged.extend(low_ips)
+                else:
+                    logging.info(
+                        "No low ip detected in %s for %s",
+                        vpc_object.vpc_id,
+                        region_id,
+                    )
+        else:
+            vpc = vpc_client.Vpc(os.environ["VPC_ID"])
+
+            subnets_flagged = check_for_low_ips(
+                list(vpc.subnets.all()), vpc.vpc_id, region_id, count_enis
+            )
+
+    # Notifications
     if subnets_flagged:
-        logging.info("Sending SNS Notification")
+        logging.info("Sending SNS Notification to alert recipients")
         send_notification(subnets_flagged, count_enis)
     else:
         logging.info("No flagged subnet, no notification")
