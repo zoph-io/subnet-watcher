@@ -13,6 +13,11 @@ Subnet-Watcher monitors the remaining free IP addresses in AWS VPC subnets (both
 - `AvailableIpAddressPercent` - Percentage of available IP Addresses
 - `AvailableNetworkInterface` - Number of Elastic Network Interfaces Available (ENI) in VPC (with `status` = `available`)
 
+### Sample
+
+![CW Metrics](https://user-images.githubusercontent.com/20846187/214828070-edde41d9-e903-418d-8665-1c1f71856b26.png)
+
+
 AWS recently released [VPC IPAM](https://docs.aws.amazon.com/vpc/latest/ipam/what-it-is-ipam.html), however, I have not been able to find any benefits from it and it seems to be a costly solution to this problem.
 
 ## 🎛 Parameters
