@@ -18,14 +18,14 @@ help:
 
 ###################### Parameters ######################
 Product := subnet-watcher
-Project := discover
+Project := myproject
 Environment := sandbox
 
 AWSRegion := eu-west-1
 
 # Alerting
 PercentageRemainingWarning := 5
-AlertsRecipient := victor.grenu@external.engie.com
+AlertsRecipient := john.doe@contoso.com
 
 # Generated
 Description := ${Product} - ${Project} - ${Environment}
