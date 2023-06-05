@@ -18,14 +18,14 @@ help:
 
 ###################### Parameters ######################
 Product := subnet-watcher
-Project := zophio
-Environment := dev
+Project := discover
+Environment := sandbox
 
 AWSRegion := eu-west-1
 
 # Alerting
 PercentageRemainingWarning := 5
-AlertsRecipient := victor@zoph.io
+AlertsRecipient := victor.grenu@external.engie.com
 
 # Generated
 Description := ${Product} - ${Project} - ${Environment}
