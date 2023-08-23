@@ -258,7 +258,6 @@ def main(event, context):
         else: 
             region_id = os.environ["REGION_ID"]
 
-
         # Get ENI count on this specific region
         enis_count = count_available_enis(region_id)
         count_enis.append(
@@ -305,7 +304,6 @@ def main(event, context):
                     region_id,
                     count_enis,
             )
-
 
     # Notifications
     if subnets_flagged:
