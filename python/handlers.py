@@ -250,8 +250,13 @@ def main(event, context):
                         region["RegionName"],
                     )
     else:
-        # Checking single AWS Region as VPC_ID and REGION_ID are NOT set
-        region_id = os.environ["REGION_ID"]
+        # Checking single AWS Region
+        if ("REGION_ID" not in os.environ or os.environ["REGION_ID"] == ""):
+            session = boto3.session.Session()
+            region_id = session.region_name
+            logging.info("os.environ[\"REGION_ID\"] not set, defaulting to region %s", region_id)
+        else: 
+            region_id = os.environ["REGION_ID"]
 
         # Get ENI count on this specific region
         enis_count = count_available_enis(region_id)
@@ -290,10 +295,14 @@ def main(event, context):
                         region_id,
                     )
         else:
-            vpc = vpc_client.Vpc(os.environ["VPC_ID"])
+            vpc_resource = boto3.resource("ec2", region_name=region_id)
+            vpc_object = vpc_resource.Vpc(os.environ["VPC_ID"])
 
             subnets_flagged = check_for_low_ips(
-                list(vpc.subnets.all()), vpc.vpc_id, region_id, count_enis
+                    list(vpc_object.subnets.all()),
+                    vpc_object.vpc_id,
+                    region_id,
+                    count_enis,
             )
 
     # Notifications
