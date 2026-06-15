@@ -109,3 +109,98 @@ Resources:
       Subscription:
         - Protocol: email
           Endpoint: !Ref pAlertsRecipient
+
+  Dashboard:
+    Type: "AWS::CloudWatch::Dashboard"
+    Properties:
+      DashboardName: !Sub "${pProjectName}-${pProductName}-${pEnv}"
+      # SEARCH expressions auto-discover every subnet/VPC/region the Lambda
+      # publishes, so the dashboard adapts without hardcoding any IDs.
+      DashboardBody: !Sub |
+        {
+          "widgets": [
+            {
+              "type": "text",
+              "x": 0, "y": 0, "width": 24, "height": 2,
+              "properties": {
+                "markdown": "# 🔍 Subnet Watcher — ${pEnv}\nVPC subnet IP capacity and detached ENIs (namespace `VPCSubnetMetrics`). Alert threshold: **${pPercentageRemainingWarning}%** remaining."
+              }
+            },
+            {
+              "type": "metric",
+              "x": 0, "y": 2, "width": 12, "height": 8,
+              "properties": {
+                "title": "Available IP Addresses (%) per Subnet",
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "${AWS::Region}",
+                "period": 300,
+                "stat": "Average",
+                "yAxis": { "left": { "min": 0, "max": 100, "label": "% remaining" } },
+                "metrics": [
+                  [ { "expression": "SEARCH('{VPCSubnetMetrics,VPCId,SubnetId} MetricName=\"AvailableIpAddressPercent\"', 'Average', 300)", "id": "pct", "region": "${AWS::Region}" } ]
+                ],
+                "annotations": {
+                  "horizontal": [
+                    { "label": "Warning threshold", "value": ${pPercentageRemainingWarning}, "color": "#d62728", "fill": "below" }
+                  ]
+                }
+              }
+            },
+            {
+              "type": "metric",
+              "x": 12, "y": 2, "width": 12, "height": 8,
+              "properties": {
+                "title": "Available IP Address Count per Subnet",
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "${AWS::Region}",
+                "period": 300,
+                "stat": "Average",
+                "yAxis": { "left": { "min": 0, "label": "free IPs" } },
+                "metrics": [
+                  [ { "expression": "SEARCH('{VPCSubnetMetrics,VPCId,SubnetId} MetricName=\"AvailableIpAddressCount\"', 'Average', 300)", "id": "cnt", "region": "${AWS::Region}" } ]
+                ]
+              }
+            },
+            {
+              "type": "metric",
+              "x": 0, "y": 10, "width": 12, "height": 8,
+              "properties": {
+                "title": "Total Usable IP Addresses per Subnet",
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "${AWS::Region}",
+                "period": 300,
+                "stat": "Average",
+                "yAxis": { "left": { "min": 0, "label": "total usable IPs" } },
+                "metrics": [
+                  [ { "expression": "SEARCH('{VPCSubnetMetrics,VPCId,SubnetId} MetricName=\"TotalIpAddressCount\"', 'Average', 300)", "id": "tot", "region": "${AWS::Region}" } ]
+                ]
+              }
+            },
+            {
+              "type": "metric",
+              "x": 12, "y": 10, "width": 12, "height": 8,
+              "properties": {
+                "title": "Available (Detached) ENIs per Region",
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "${AWS::Region}",
+                "period": 300,
+                "stat": "Average",
+                "yAxis": { "left": { "min": 0, "label": "detached ENIs" } },
+                "metrics": [
+                  [ { "expression": "SEARCH('{VPCSubnetMetrics,Region} MetricName=\"AvailableNetworkInterface\"', 'Average', 300)", "id": "eni", "region": "${AWS::Region}" } ]
+                ]
+              }
+            }
+          ]
+        }
+
+###########################################################
+Outputs:
+  ###########################################################
+  DashboardURL:
+    Description: "CloudWatch dashboard for subnet / VPC IP usage"
+    Value: !Sub "https://${AWS::Region}.console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#dashboards:name=${pProjectName}-${pProductName}-${pEnv}"

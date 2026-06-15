@@ -17,6 +17,7 @@ publishes them as CloudWatch metrics, and emails you when a subnet gets too full
 ## ✅ What you get
 
 - 📊 **CloudWatch metrics** (namespace `VPCSubnetMetrics`) you can graph and alarm on.
+- 📈 **A ready-made CloudWatch dashboard** that auto-discovers your subnets/VPCs — no manual setup.
 - 📧 **Email alerts** (via SNS) when a subnet drops below your free-IP threshold.
 - 🧹 **Detached-ENI visibility** so you can reclaim leaked network interfaces.
 - 💸 **Cheap**: a 5-minute Lambda + a handful of custom metrics — no IPAM bill.
@@ -42,9 +43,23 @@ flowchart LR
    ```
 
 3. **Confirm the email subscription** AWS sends to `AlertsRecipient` (one-time click).
-4. Open CloudWatch → Metrics → `VPCSubnetMetrics` to see your subnets, or build a dashboard.
+4. Open the dashboard: the stack prints a `DashboardURL` output, or go to
+   CloudWatch → Dashboards → `<Project>-<Product>-<Environment>`.
 
 To remove everything: `make delete`.
+
+## 📺 Dashboard
+
+`make deploy` creates a CloudWatch dashboard named `<Project>-<Product>-<Environment>` with
+four panels, built from `SEARCH` expressions so it **automatically picks up every subnet, VPC,
+and region** the Lambda reports — no IDs to maintain:
+
+- Available IP Addresses (%) per subnet, with your warning threshold drawn as a red band.
+- Available IP address count per subnet.
+- Total usable IP addresses per subnet.
+- Available (detached) ENIs per region.
+
+The deploy prints the direct link as the `DashboardURL` stack output.
 
 ## 🆚 Why not just use AWS IPAM?
 
