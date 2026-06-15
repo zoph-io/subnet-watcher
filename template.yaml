@@ -28,7 +28,7 @@ Resources:
       FunctionName: !Sub ${pProjectName}-${pProductName}-${pEnv}
       Description: !Ref pDescription
       Handler: handlers.main
-      Runtime: python3.9
+      Runtime: python3.13
       CodeUri: ./python/
       Events:
         Schedule:
