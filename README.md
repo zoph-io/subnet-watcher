@@ -112,6 +112,18 @@ All published under the `VPCSubnetMetrics` namespace:
 
 ![CW Metrics](https://user-images.githubusercontent.com/20846187/214828070-edde41d9-e903-418d-8665-1c1f71856b26.png)
 
+## 🧪 Development
+
+```bash
+make install-dev   # install local tooling (boto3, ruff, cfn-lint)
+make test          # run the unit tests (stdlib unittest, no AWS calls)
+make lint          # ruff on the Python + cfn-lint on the template
+```
+
+The tests cover the IP math (reserved-IP subtraction, percentage precision),
+the low-IP flagging threshold, and the small-CIDR divide-by-zero guard. They mock
+out CloudWatch, so they never touch AWS.
+
 ## 🎖️ Credits
 
 Inspired by these projects:

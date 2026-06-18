@@ -13,6 +13,10 @@ help:
 	@echo "	build - build artifacts ${Product} for ${Project}"
 	@echo "	deploy - deploy ${Product} for ${Project} - also run 'build' command"
 	@echo "	---"
+	@echo "	test - run the unit test suite"
+	@echo "	lint - lint Python (ruff) and validate the CloudFormation template (cfn-lint)"
+	@echo "	install-dev - install local development tooling (requirements-dev.txt)"
+	@echo "	---"
 	@echo "	delete - delete ${Product} for ${Project}"
 	@echo "	clean - clean the build folder and artifacts"
 
@@ -30,6 +34,17 @@ AlertsRecipient := john.doe@contoso.com
 # Generated
 Description := ${Product} - ${Project} - ${Environment}
 #######################################################
+
+.PHONY: install-dev test lint
+install-dev:
+	pip install -r requirements-dev.txt
+
+test:
+	python3 -m unittest discover -s tests -p "test_*.py" -v
+
+lint:
+	ruff check python/ tests/
+	cfn-lint template.yaml
 
 build: clean
 	sam build

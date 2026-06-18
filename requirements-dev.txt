@@ -1,0 +1,9 @@
+# Local development & CI tooling.
+# Install with: pip install -r requirements-dev.txt
+#
+# The unit tests use only the Python standard library (unittest + mock), so no
+# test runner is required. boto3 is needed locally because handlers.py imports
+# it (the Lambda runtime provides it in AWS, but not on your machine).
+boto3>=1.34,<2
+ruff>=0.6
+cfn-lint>=1.0

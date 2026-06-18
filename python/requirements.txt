@@ -1,0 +1,7 @@
+# Runtime dependencies bundled into the Lambda deployment package.
+#
+# boto3 and botocore are already provided by the AWS Lambda Python runtime, so
+# they are intentionally NOT listed here (bundling them only bloats the package
+# and can shadow the runtime-managed version). This file is kept empty on
+# purpose; add a pinned entry here only if you introduce a dependency that the
+# runtime does not provide.
