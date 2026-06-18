@@ -41,6 +41,9 @@ Resources:
         Variables:
           VPC_ID: ""
           REGION_ID: !Ref pAWSRegion
+          SCAN_ALL_REGIONS: "false"
+          SUBNET_IDS: ""
+          LAMBDA_NOTIFICATIONS: "true"
           PERCENTAGE_REMAINING_WARNING: !Ref pPercentageRemainingWarning
           SNS_TOPIC_ARN: !Ref AlertingTopic
           MESSAGE_SUBJECT: !Sub "[${pProductName}-${pEnv}] Subnets are running out of ip addresses!"
@@ -106,9 +109,33 @@ Resources:
     Type: "AWS::SNS::Topic"
     Properties:
       DisplayName: !Sub "[${pProductName}-${pEnv}] Alarm for ${pProjectName}"
+      # Encrypt at rest with the AWS-managed key for SNS (no extra cost).
+      KmsMasterKeyId: "alias/aws/sns"
       Subscription:
         - Protocol: email
           Endpoint: !Ref pAlertsRecipient
+
+  LowIpAlarm:
+    Type: "AWS::CloudWatch::Alarm"
+    Properties:
+      AlarmName: !Sub "${pProjectName}-${pProductName}-${pEnv}-low-ip"
+      AlarmDescription: !Sub "[${pProductName}] A subnet in ${pProjectName} dropped to/below ${pPercentageRemainingWarning}% free IP addresses"
+      ActionsEnabled: true
+      AlarmActions:
+        - !Ref AlertingTopic
+      OKActions:
+        - !Ref AlertingTopic
+      ComparisonOperator: LessThanOrEqualToThreshold
+      EvaluationPeriods: 1
+      Threshold: !Ref pPercentageRemainingWarning
+      TreatMissingData: notBreaching
+      # Stateful alert over every reported subnet: MIN() collapses the SEARCH
+      # result set into a single series, alarming if ANY subnet is low.
+      Metrics:
+        - Id: minpct
+          Label: "Min available IP % across subnets"
+          ReturnData: true
+          Expression: !Sub "MIN(SEARCH('{VPCSubnetMetrics,VPCId,SubnetId} MetricName=\"AvailableIpAddressPercent\"', 'Average', 300))"
 
   Dashboard:
     Type: "AWS::CloudWatch::Dashboard"

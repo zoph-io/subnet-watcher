@@ -87,12 +87,24 @@ Set these in the [`Makefile`](Makefile):
 |       `AlertsRecipient`      |    Email address that receives alerts  |  `yes`   |                |
 | `PercentageRemainingWarning` | Alert when free IPs drop to this %      |  `yes`   |      `5`       |
 
-**Scope of monitoring** (set as Lambda env vars in [`template.yaml`](template.yaml)):
+**Scope & behavior** (set as Lambda env vars in [`template.yaml`](template.yaml)):
 
-- Leave both `REGION_ID` and `VPC_ID` empty → scans **every enabled region** (regions it
-  can't access are skipped, not fatal).
-- Set `REGION_ID` only → scans all VPCs in that one region.
-- Set `REGION_ID` + `VPC_ID` → scans a single VPC.
+| Env var | Default | Effect |
+| --- | --- | --- |
+| `REGION_ID` | deployment region | Region to scan (defaults to where the stack is deployed). |
+| `VPC_ID` | `""` | If set, scans only that VPC; otherwise all VPCs in the region. |
+| `SCAN_ALL_REGIONS` | `false` | Set to `true` to scan **every enabled region** (slower, more custom metrics; regions it can't reach are skipped, not fatal). |
+| `SUBNET_IDS` | `""` | Comma-separated allow-list; when set, only these subnets are monitored. |
+| `LAMBDA_NOTIFICATIONS` | `true` | Detailed per-subnet email on each run. Set `false` to rely only on the CloudWatch alarm (less noise, stateful). |
+
+## 🔔 Alerting
+
+Two complementary paths, both delivered to the (KMS-encrypted) SNS topic:
+
+- **CloudWatch alarm** (`LowIpAlarm`) on the `AvailableIpAddressPercent` metric — stateful, so
+  you get one alert when any subnet crosses the threshold and a recovery notice when it clears.
+- **Lambda notification** — a detailed email naming exactly which subnets are low (controlled by
+  `LAMBDA_NOTIFICATIONS`).
 
 ## 📈 Metrics reference
 
