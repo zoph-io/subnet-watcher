@@ -142,3 +142,7 @@ Inspired by these projects:
 
 - https://github.com/buzzsurfr/VpcSubnetIpMonitor
 - https://github.com/mstockwell/Check-VPC-IP-Address-Space
+
+## 📄 License
+
+Licensed under the [Apache License 2.0](LICENSE). Copyright zoph.io.
